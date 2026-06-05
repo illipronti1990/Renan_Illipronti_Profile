@@ -23,7 +23,7 @@ Sou **Analista de QA** com formação em **Sistemas da Informação** e foco em 
 
 Atuo com **testes funcionais e não funcionais**, **BDD**, **TDD** e **ATDD**, construindo automações confiáveis que reduzem risco e aceleram entregas.
 
-- 🎯 Especialista em **Robot Framework**, **Cypress** e **Playwright**
+- 🎯 Especialista em **Cypress** e **Playwright**
 - 🧪 Experiência com **testes E2E**, **API** e **validação de dados**
 - 🏗️ Aplicação de **Page Object Model** e boas práticas de QA
 - 🚀 Interesse constante em **CI/CD** e melhoria contínua de processos
@@ -37,7 +37,7 @@ I'm a **QA Analyst** with a background in **Information Systems**, focused on en
 
 I work with **functional and non-functional testing**, **BDD**, **TDD**, and **ATDD**, building reliable automation that reduces risk and speeds up delivery.
 
-- 🎯 Specialist in **Robot Framework**, **Cypress**, and **Playwright**
+- 🎯 Specialist in **Cypress** and **Playwright**
 - 🧪 Experience with **E2E testing**, **API testing**, and **data validation**
 - 🏗️ Strong use of **Page Object Model** and QA best practices
 - 🚀 Continuous interest in **CI/CD** and process improvement
