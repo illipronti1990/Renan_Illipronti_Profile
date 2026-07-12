@@ -1284,9 +1284,3 @@ if __name__ == "__main__":
 
     path = generate(args.output, year=year)
     print(f"Planilha gerada: {path}" + (f" (exercício {year})" if args.novo_exercicio else ""))
-
-    xls_path = path.with_suffix(".xls")
-    from exportar_xls import xlsx_to_xls
-
-    xlsx_to_xls(path, xls_path)
-    print(f"Arquivo .xls gerado: {xls_path}")

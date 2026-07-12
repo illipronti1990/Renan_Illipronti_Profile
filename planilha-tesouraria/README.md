@@ -4,14 +4,7 @@ Planilha Excel profissional para gestão financeira paroquial, com controle de c
 
 ## Arquivo principal
 
-- **`Tesouraria_Igreja.xlsx`** — formato moderno (Excel 2007+)
-- **`Tesouraria_Igreja.xls`** — formato clássico (Excel 97–2003 / compatibilidade)
-
-Para gerar apenas o `.xls`:
-
-```bash
-python exportar_xls.py
-```
+**`Tesouraria_Igreja.xlsx`** — abra no Microsoft Excel (recomendado: versão 2016+).
 
 ## Estrutura (18 abas visíveis)
 
