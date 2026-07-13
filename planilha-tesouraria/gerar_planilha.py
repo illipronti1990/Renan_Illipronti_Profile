@@ -17,7 +17,6 @@ from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
-from openpyxl.worksheet.pagebreak import Break
 
 # ── Paleta ───────────────────────────────────────────────────────────────────
 NAVY = "1B2A4A"
@@ -377,15 +376,11 @@ def create_pesquisa_sheet(wb: Workbook):
     ws["B5"] = f"=SEERRO(PROCV(B3;'Cadastro Dizimistas'!$B${DATA_START}:$D${DATA_END};3;FALSO);\"\")"
     apply_formula_style(ws, 5, 2)
 
-    headers = ["Data", "Nome", "Valor", "Forma Pagamento", "Conta", "Observação"]
-    style_header_row(ws, headers, row=7)
-    ws.cell(row=8, column=1).value = (
-        f"=SE(B3=\"\";\"\";FILTRAR('Dízimos Mensais'!A{DATA_START}:G{DATA_END};"
-        f"'Dízimos Mensais'!B{DATA_START}:B{DATA_END}=B3))"
-    )
-    ws["A9"] = "ℹ️ Requer Excel 365 (função FILTRAR). Use o filtro na aba Dízimos em versões anteriores."
-    ws["A9"].font = _font(italic=True, color="666666")
-    ws.merge_cells("A9:G9")
+    ws["A7"] = "Historico de dizimos:"
+    ws["A7"].font = _font(bold=True, color=NAVY)
+    ws["A8"] = "Use o filtro na aba Dízimos Mensais para ver os lancamentos do dizimista selecionado."
+    ws["A8"].font = _font(italic=True, color="666666")
+    ws.merge_cells("A8:G8")
     set_column_widths(ws, {1: 14, 2: 28, 3: 14, 4: 18, 5: 12, 6: 30, 7: 14})
     ws.sheet_properties.tabColor = GOLD
     return ws
@@ -515,18 +510,6 @@ def create_gastos_sheet(wb: Workbook):
     add_list_validation(ws, "H", DATA_START, DATA_END, f"Configurações!{CFG_RESP}")
     add_autofilter(ws, len(headers))
     set_column_widths(ws, {1: 14, 2: 18, 3: 26, 4: 20, 5: 18, 6: 14, 7: 12, 8: 18, 9: 26})
-
-    limit_rule = FormulaRule(
-        formula=[
-            f'AND(B{DATA_START}<>"",F{DATA_START}>0,'
-            f'SOMASES($F$3:$F$502,$B$3:$B$502,B{DATA_START},'
-            f'$A$3:$A$502,">="&DATA(Configurações!$B$3,MÊS($A{DATA_START}),1),'
-            f'$A$3:$A$502,"<="&FIM.MÊS($A{DATA_START}))>'
-            f'SEERRO(ÍNDICE(Configurações!$I$51:$I$65,CORRESP(B{DATA_START},Configurações!$H$51:$H$65,0)),999999999))'
-        ],
-        fill=_fill(YELLOW_LIGHT),
-    )
-    ws.conditional_formatting.add(f"A{DATA_START}:I{DATA_END}", limit_rule)
     ws.sheet_properties.tabColor = GOLD
     return ws
 
@@ -668,7 +651,7 @@ def create_conciliacao_sheet(wb: Workbook):
         ws.cell(row=row, column=5).number_format = CURRENCY_FMT
         ws.cell(row=row, column=6).value = (
             f"=SE(OU(A{row}=\"\";C{row}=\"\";D{row}=\"\");\"\";"
-            f"SE(C{row}=D{row};\"✅\";\"❌\"))"
+            f"SE(C{row}=D{row};\"Conferido\";\"Divergente\"))"
         )
         apply_formula_style(ws, row, 6)
 
@@ -676,7 +659,7 @@ def create_conciliacao_sheet(wb: Workbook):
     add_autofilter(ws, len(headers))
     ws.conditional_formatting.add(
         f"F{DATA_START}:F{DATA_END}",
-        FormulaRule(formula=[f'F{DATA_START}="❌"'], fill=_fill(RED_LIGHT)),
+        FormulaRule(formula=[f'F{DATA_START}="Divergente"'], fill=_fill(RED_LIGHT)),
     )
     set_column_widths(ws, {1: 14, 2: 35, 3: 16, 4: 16, 5: 14, 6: 12})
     ws.sheet_properties.tabColor = NAVY
@@ -980,9 +963,6 @@ def create_impressao_sheet(wb: Workbook):
             ws.merge_cells(start_row=hdr, start_column=1, end_row=hdr, end_column=6)
             add_signature_block(ws, hdr + 3)
 
-        if start_row > 5:
-            ws.row_breaks.append(Break(id=start_row - 1))
-
     setup_print_a4(ws, "Prestação de Contas")
     set_column_widths(ws, {1: 28, 2: 18, 3: 14, 4: 14, 5: 14, 6: 14})
     ws.sheet_properties.tabColor = GOLD
@@ -1021,6 +1001,43 @@ def create_novo_exercicio_sheet(wb: Workbook):
         ws.merge_cells(start_row=i, start_column=1, end_row=i, end_column=4)
 
     ws.sheet_properties.tabColor = "2E7D32"
+    return ws
+
+
+def create_dados_dashboard_sheet(wb: Workbook):
+    """Aba auxiliar com dados dos graficos (evita colunas ocultas no Dashboard)."""
+    ws = wb.create_sheet("_DadosDashboard")
+    headers = ["Mes", "Entradas", "Gastos", "Saldo Acum."]
+    for col, h in enumerate(headers, 1):
+        ws.cell(row=2, column=col, value=h)
+
+    for i, month in enumerate(MONTHS_PT):
+        r = DATA_START + i
+        ws.cell(row=r, column=1, value=month[:3])
+        ws.cell(row=r, column=2).value = f"='Resumo Financeiro'!E{r}"
+        ws.cell(row=r, column=3).value = f"='Resumo Financeiro'!F{r}"
+        ws.cell(row=r, column=4).value = (
+            f"=Configurações!{CFG_SALDO_TOTAL}+SOMA($B${DATA_START}:B{r})-SOMA($C${DATA_START}:C{r})"
+        )
+
+    pie_row = DATA_START + 14
+    ws.cell(row=pie_row, column=1, value="Receita")
+    ws.cell(row=pie_row, column=2, value="Total")
+    for i, label in enumerate(["Dizimos", "Doacoes", "Missas"]):
+        r = pie_row + 1 + i
+        ws.cell(row=r, column=1, value=label)
+        ws.cell(row=r, column=2).value = f"='Resumo Financeiro'!{chr(ord('B') + i)}{RESUMO_TOTAL_ROW}"
+
+    ws.cell(row=2, column=6, value="Categoria")
+    ws.cell(row=2, column=7, value="Total")
+    for i, cat in enumerate(GASTOS_CATEGORIAS):
+        r = DATA_START + i
+        ws.cell(row=r, column=6, value=cat)
+        ws.cell(row=r, column=7).value = (
+            f'=SOMASE(Gastos!$B${DATA_START}:$B${DATA_END};F{r};Gastos!$F${DATA_START}:$F${DATA_END})'
+        )
+
+    ws.sheet_state = "hidden"
     return ws
 
 
@@ -1086,21 +1103,21 @@ def create_dashboard_sheet(wb: Workbook):
             17,
             f'=SE(ÍNDICE(\'Resumo Financeiro\'!F{DATA_START}:F{DATA_START + 11};MÊS(HOJE()))>'
             f'ÍNDICE(\'Resumo Financeiro\'!E{DATA_START}:E{DATA_START + 11};MÊS(HOJE()));'
-            f'"🔴 Gastos maiores que entradas do mês";"🟢 Entradas ≥ gastos do mês")',
+            f'"ALERTA: Gastos maiores que entradas do mes";"OK: Entradas cobrem os gastos do mes")',
         ),
         (
             18,
-            f'=SE({saldo.coordinate}<0;"🔴 Saldo negativo — atenção!";"🟢 Saldo positivo")',
+            f'=SE({saldo.coordinate}<0;"ALERTA: Saldo negativo";"OK: Saldo positivo")',
         ),
         (
             19,
             f'=SE(ÍNDICE(\'Resumo Financeiro\'!I{DATA_START}:I{DATA_START + 11};MÊS(HOJE()))>=1;'
-            f'"🟢 Meta mensal de arrecadação atingida!";'
-            f'"🟡 Meta mensal ainda não atingida")',
+            f'"OK: Meta mensal atingida";'
+            f'"Meta mensal ainda nao atingida")',
         ),
         (
             20,
-            '="🟡 Verifique categorias acima do limite na aba Gastos (formatação condicional)"',
+            '="Verifique limites de gastos na aba Configuracoes"',
         ),
     ]
     for row, formula in alerts:
@@ -1114,7 +1131,7 @@ def create_dashboard_sheet(wb: Workbook):
     ws["A22"].fill = _fill(LIGHT_BLUE)
 
     conc_kpis = [
-        (23, "Total Conciliado (✅)", f'=SOMASE(\'Conciliação Bancária\'!F{DATA_START}:F{DATA_END};"✅";\'Conciliação Bancária\'!C{DATA_START}:C{DATA_END})'),
+        (23, "Total Conciliado", f'=SOMASE(\'Conciliação Bancária\'!F{DATA_START}:F{DATA_END};"Conferido";\'Conciliação Bancária\'!C{DATA_START}:C{DATA_END})'),
         (24, "Total Pendente", f"=SOMA('Conciliação Bancária'!C{DATA_START}:C{DATA_END})-C23"),
         (25, "Diferenças Encontradas", f"=SOMA('Conciliação Bancária'!E{DATA_START}:E{DATA_END})"),
     ]
@@ -1124,69 +1141,48 @@ def create_dashboard_sheet(wb: Workbook):
         apply_formula_style(ws, row, 3)
         ws.cell(row=row, column=3).number_format = CURRENCY_FMT
 
-    chart_data_col = 12
-    for i, month in enumerate(MONTHS_PT):
-        r = 3 + i
-        ws.cell(row=r, column=chart_data_col, value=month[:3])
-        ws.cell(row=r, column=chart_data_col + 1).value = f"='Resumo Financeiro'!E{DATA_START + i}"
-        ws.cell(row=r, column=chart_data_col + 2).value = f"='Resumo Financeiro'!F{DATA_START + i}"
-        ws.cell(row=r, column=chart_data_col + 3).value = (
-            f"=Configurações!{CFG_SALDO_TOTAL}+SOMA(${get_column_letter(chart_data_col + 1)}$3:"
-            f"{get_column_letter(chart_data_col + 1)}{r})-SOMA(${get_column_letter(chart_data_col + 2)}$3:"
-            f"{get_column_letter(chart_data_col + 2)}{r})"
-        )
+    data_ws = wb["_DadosDashboard"]
+    cats1 = Reference(data_ws, min_col=1, min_row=DATA_START, max_row=DATA_START + 11)
 
-    cats1 = Reference(ws, min_col=chart_data_col, min_row=3, max_row=14)
     chart1 = BarChart()
     chart1.type = "col"
     chart1.grouping = "clustered"
-    chart1.title = "📊 Entradas x Gastos por Mês"
+    chart1.title = "Entradas x Gastos por Mes"
     chart1.style = 10
     chart1.width = 16
     chart1.height = 9
-    data1 = Reference(ws, min_col=chart_data_col + 1, min_row=2, max_col=chart_data_col + 2, max_row=14)
+    data1 = Reference(data_ws, min_col=2, min_row=2, max_col=3, max_row=DATA_START + 11)
     chart1.add_data(data1, titles_from_data=True)
     chart1.set_categories(cats1)
     ws.add_chart(chart1, "A27")
 
     chart2 = LineChart()
-    chart2.title = "📈 Evolução do Saldo"
+    chart2.title = "Evolucao do Saldo"
     chart2.style = 10
     chart2.width = 16
     chart2.height = 9
-    data2 = Reference(ws, min_col=chart_data_col + 3, min_row=2, max_row=14)
+    data2 = Reference(data_ws, min_col=4, min_row=2, max_row=DATA_START + 11)
     chart2.add_data(data2, titles_from_data=True)
     chart2.set_categories(cats1)
     ws.add_chart(chart2, "J27")
 
-    tr_row = 16
-    for i, label in enumerate(["Dízimos", "Doações", "Missas"]):
-        ws.cell(row=tr_row + i, column=chart_data_col, value=label)
-        ws.cell(row=tr_row + i, column=chart_data_col + 1).value = f"='Resumo Financeiro'!{chr(ord('B') + i)}{RESUMO_TOTAL_ROW}"
-
+    pie_row = DATA_START + 14
     chart3 = PieChart()
-    chart3.title = "🍕 Origem das Receitas"
+    chart3.title = "Origem das Receitas"
     chart3.width = 14
     chart3.height = 9
-    chart3.add_data(Reference(ws, min_col=chart_data_col + 1, min_row=tr_row, max_row=tr_row + 2))
-    chart3.set_categories(Reference(ws, min_col=chart_data_col, min_row=tr_row, max_row=tr_row + 2))
+    chart3.add_data(Reference(data_ws, min_col=2, min_row=pie_row + 1, max_row=pie_row + 3))
+    chart3.set_categories(Reference(data_ws, min_col=1, min_row=pie_row + 1, max_row=pie_row + 3))
     chart3.dataLabels = DataLabelList()
     chart3.dataLabels.showPercent = True
     ws.add_chart(chart3, "A42")
 
-    for i, cat in enumerate(GASTOS_CATEGORIAS):
-        r = 3 + i
-        ws.cell(row=r, column=19, value=cat)
-        ws.cell(row=r, column=20).value = (
-            f'=SOMASE(Gastos!$B${DATA_START}:$B${DATA_END};S{r};Gastos!$F${DATA_START}:$F${DATA_END})'
-        )
-
     chart4 = PieChart()
-    chart4.title = "🍕 Gastos por Categoria"
+    chart4.title = "Gastos por Categoria"
     chart4.width = 14
     chart4.height = 9
-    chart4.add_data(Reference(ws, min_col=20, min_row=3, max_row=3 + len(GASTOS_CATEGORIAS) - 1))
-    chart4.set_categories(Reference(ws, min_col=19, min_row=3, max_row=3 + len(GASTOS_CATEGORIAS) - 1))
+    chart4.add_data(Reference(data_ws, min_col=7, min_row=DATA_START, max_row=DATA_START + len(GASTOS_CATEGORIAS) - 1))
+    chart4.set_categories(Reference(data_ws, min_col=6, min_row=DATA_START, max_row=DATA_START + len(GASTOS_CATEGORIAS) - 1))
     chart4.dataLabels = DataLabelList()
     chart4.dataLabels.showPercent = True
     ws.add_chart(chart4, "J42")
@@ -1195,8 +1191,6 @@ def create_dashboard_sheet(wb: Workbook):
         saldo.coordinate,
         FormulaRule(formula=[f"{saldo.coordinate}<0"], fill=_fill(RED_LIGHT)),
     )
-    for col_idx in range(chart_data_col, 21):
-        ws.column_dimensions[get_column_letter(col_idx)].hidden = True
     ws.sheet_properties.tabColor = GOLD
     return ws
 
@@ -1204,7 +1198,6 @@ def create_dashboard_sheet(wb: Workbook):
 def protect_sheets(wb: Workbook):
     for ws in wb.worksheets:
         if ws.title.startswith("_"):
-            ws.protection.sheet = True
             continue
         ws.protection.sheet = True
         ws.protection.sort = True
@@ -1232,6 +1225,7 @@ SHEET_ORDER = [
     "Impressão A4",
     "Configurações",
     "Novo Exercício",
+    "_DadosDashboard",
     "_Consolidado",
 ]
 
@@ -1259,6 +1253,7 @@ def generate(output_path: Path, year: int = YEAR) -> Path:
     create_impressao_sheet(wb)
     create_novo_exercicio_sheet(wb)
     create_pesquisa_sheet(wb)
+    create_dados_dashboard_sheet(wb)
     create_dashboard_sheet(wb)
 
     for target_idx, name in enumerate(SHEET_ORDER):
