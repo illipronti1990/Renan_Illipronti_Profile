@@ -1,31 +1,33 @@
 # AGENTS.md
 
-## Cursor Cloud specific instructions
+## Instruções específicas do Cursor Cloud
 
-This repository is a **GitHub profile README** (personal "About Me" page). On the
-`main` branch it contains a single tracked file, `README.md`. There is:
+Este repositório é um **README de perfil do GitHub** (página pessoal "Sobre mim").
+Na branch `main` ele contém um único arquivo versionado, `README.md`. Não há:
 
-- No application code, backend, or frontend
-- No package manager, lockfile, or dependency manifest
-- No build, lint, test, or service to run
+- Código de aplicação, backend ou frontend
+- Gerenciador de pacotes, lockfile ou manifesto de dependências
+- Build, lint, teste ou serviço para executar
 
-Because of this, there is **nothing to install** and the update script is a no-op.
+Por causa disso, **não há nada para instalar** e o script de atualização é um no-op.
 
-### Previewing the README (the only meaningful "dev" activity)
+### Pré-visualizando o README (a única atividade de "desenvolvimento" relevante)
 
-`README.md` is Markdown that GitHub renders automatically on the profile page. It
-uses external image services (shields.io, capsule-render, github-readme-stats,
-streak-stats, komarev) referenced purely as image URLs.
+`README.md` é Markdown que o GitHub renderiza automaticamente na página de perfil.
+Ele usa serviços externos de imagem (shields.io, capsule-render, github-readme-stats,
+streak-stats, komarev) referenciados apenas como URLs de imagem.
 
-To preview locally the way GitHub renders it:
+Para pré-visualizar localmente da forma como o GitHub renderiza:
 
-1. Render to GitHub-flavored HTML: `gh api --method POST /markdown/raw -H "Content-Type: text/plain" --input README.md > body.html`
-2. Wrap `body.html` in a minimal HTML page and serve it, e.g. `python3 -m http.server 8899`
-3. Open `http://localhost:8899/` in a browser.
+1. Renderize para HTML no formato do GitHub: `gh api --method POST /markdown/raw -H "Content-Type: text/plain" --input README.md > body.html`
+2. Envolva `body.html` em uma página HTML mínima e sirva-a, por exemplo `python3 -m http.server 8899`
+3. Abra `http://localhost:8899/` em um navegador.
 
-Notes:
-- The `github-readme-stats` and `streak-stats` widgets query the GitHub API
-  unauthenticated and are rate-limited from arbitrary IPs, so they may show a
-  "Failed to retrieve contributions" placeholder locally. This is an external
-  service limitation, not a repo problem — they render fine on the live profile.
-- Do not add build tooling or dependencies to this repo just to preview it.
+Observações:
+- Os widgets `github-readme-stats` e `streak-stats` consultam a API do GitHub sem
+  autenticação e são limitados por taxa (rate limit) a partir de IPs arbitrários,
+  então podem exibir um placeholder "Failed to retrieve contributions" localmente.
+  Isso é uma limitação do serviço externo, não um problema do repositório — eles
+  renderizam normalmente no perfil real.
+- Não adicione ferramentas de build ou dependências a este repositório apenas para
+  pré-visualizá-lo.
